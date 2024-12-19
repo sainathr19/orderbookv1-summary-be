@@ -1,0 +1,26 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-cors = "0.7.0"
+actix-web = "4.9.0"
+alloy = "0.8.1"
+chrono = { version = "0.4.39", features = ["serde"] }
+dotenv = "0.15.0"
+lazy_static = "1.5.0"
+reqwest = { version = "0.12.9", features = ["json"] }
+serde = "1.0.216"
+serde_json = "1.0.133"
+sqlx = { version = "0.8.0", features = [
+    "runtime-tokio",
+    "tls-native-tls",
+    "postgres",
+    "derive",
+    "macros",
+    "bigdecimal",
+    "chrono",
+    "json",
+] }
+thiserror = "2.0.7"

@@ -1,7 +1,7 @@
 use dotenv::dotenv;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres, Row};
 
-use crate::models::UserTags;
+use crate::models::{BtcClosingPrice, ChainflipSwap, ThorchainSwap, UserTags};
 
 #[derive(Clone)]
 pub struct TagDB {
@@ -22,7 +22,11 @@ impl TagDB {
         Ok(TagDB { pool })
     }
 
-    pub async fn add_tag(&self, address: &String, tag: &String) -> Result<UserTags, sqlx::error::Error> {
+    pub async fn add_tag(
+        &self,
+        address: &String,
+        tag: &String,
+    ) -> Result<UserTags, sqlx::error::Error> {
         let query = r#"
             INSERT INTO user_tags (address, tags)
             VALUES ($1, ARRAY[$2]::text[])
@@ -60,9 +64,74 @@ impl TagDB {
             })
         } else {
             Ok(UserTags {
-                address : address.to_owned(),
+                address: address.to_owned(),
                 tags: Vec::new(),
             })
         }
+    }
+
+    pub async fn get_chainflip_swaps(&self) -> Result<Vec<ChainflipSwap>, sqlx::Error> {
+        let query = r#"
+            SELECT
+                timestamp,
+                CASE
+                    WHEN in_asset = 'BTC' THEN in_amount
+                    ELSE out_amount
+                END AS btc_amount,
+                CASE
+                    WHEN in_asset = 'BTC' THEN in_address
+                    ELSE out_address
+                END AS btc_address,
+                CASE
+                    WHEN in_asset = 'BTC' THEN in_amount_usd::DOUBLE PRECISION
+                    ELSE out_amount_usd::DOUBLE PRECISION
+                END AS usd_amount
+                FROM chainflip_swaps
+                WHERE (in_asset = 'BTC' OR out_asset = 'BTC') and timestamp>=1727740800
+        "#;
+
+        let swaps: Vec<ChainflipSwap> = sqlx::query_as::<_, ChainflipSwap>(query)
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(swaps)
+    }
+
+    pub async fn get_thorchain_swaps(&self) -> Result<Vec<ThorchainSwap>, sqlx::Error> {
+        let query = r#"
+        SELECT
+            timestamp,
+            CASE
+                WHEN in_asset = 'BTC.BTC' THEN in_amount::DOUBLE PRECISION
+                ELSE out_amount_1::DOUBLE PRECISION
+            END AS btc_amount,
+            CASE
+                WHEN in_asset = 'BTC.BTC' THEN in_address
+                ELSE out_address_1
+            END AS btc_address
+            FROM native_swaps_thorchain 
+            WHERE (in_asset = 'BTC.BTC' OR out_asset_1 = 'BTC.BTC') and timestamp>=1727740800
+        "#;
+
+        let swaps: Vec<ThorchainSwap> = sqlx::query_as::<_, ThorchainSwap>(query)
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(swaps)
+    }
+
+    pub async fn get_btc_closing_prices(&self) -> Result<Vec<BtcClosingPrice>, sqlx::Error> {
+        let query = r#"
+            SELECT
+                date,
+                closing_price_usd::DOUBLE PRECISION
+            FROM btc_closing_prices
+        "#;
+
+        let closing_prices: Vec<BtcClosingPrice> = sqlx::query_as::<_, BtcClosingPrice>(query)
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(closing_prices)
     }
 }

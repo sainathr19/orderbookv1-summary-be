@@ -38,3 +38,26 @@ pub struct UserTags {
     pub address : String,
     pub tags : Vec<String>
 }
+
+
+#[derive(Debug, Serialize, Deserialize,Clone,FromRow)]
+pub struct ChainflipSwap {
+    pub timestamp: i64,
+    pub btc_amount : String,
+    pub btc_address : String,
+    pub usd_amount : f64
+}   
+
+
+#[derive(Debug, Serialize, Deserialize,Clone,FromRow)]
+pub struct BtcClosingPrice {
+    pub date : String,
+    pub closing_price_usd : f64
+}   
+
+#[derive(Debug, Clone, FromRow, Serialize)]
+pub struct ThorchainSwap {
+    pub timestamp: i64,
+    pub btc_amount : f64,
+    pub btc_address : String,
+}

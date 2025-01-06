@@ -23,7 +23,7 @@ pub async fn fetch_order(tag_db: Data<TagDB>, query: Query<FetchOrdersQuery>) ->
     let mut cache = ORDERS_CACHE.lock().unwrap();
     let current_time = Utc::now();
 
-    let orders = if current_time.signed_duration_since(cache.last_fetched) > chrono::Duration::minutes(45) {
+    let orders = if current_time.signed_duration_since(cache.last_fetched) > chrono::Duration::minutes(360) {
         println!("Fetching from Orderbook");
         match orderbook.fetch_orders().await {
             Ok(new_orders) => {
@@ -155,7 +155,7 @@ pub async fn search(tag_db : Data<TagDB>, query : Query<SearchQuery>)-> impl Res
             Vec::new()
         }
     };
-    let orders = if current_time.signed_duration_since(cache.last_fetched) > chrono::Duration::minutes(45) {
+    let orders = if current_time.signed_duration_since(cache.last_fetched) > chrono::Duration::minutes(360) {
         println!("Fetching from Orderbook");
         match orderbook.fetch_orders().await {
             Ok(new_orders) => {
@@ -190,6 +190,43 @@ pub async fn search(tag_db : Data<TagDB>, query : Query<SearchQuery>)-> impl Res
     })
 }
 
+#[get("/thorchain")]
+pub async fn thorchain_data(db : Data<TagDB>) -> impl Responder {
+    let swaps = match db.get_thorchain_swaps().await{
+        Ok(res)=> res,
+        Err(err) => {
+            println!("Error fetching ThorchainSwaps : {:?}",err);
+            return HttpResponse::InternalServerError().json("Unknown Error Occured");
+        }
+    };
+    HttpResponse::Ok().json(swaps)
+}
+
+#[get("/chainflip")]
+pub async fn chainflip_data(db : Data<TagDB>) -> impl Responder {
+    let swaps = match db.get_chainflip_swaps().await{
+        Ok(res)=> res,
+        Err(err) => {
+            println!("Error fetching ChainFlipSwaps : {:?}",err);
+            return HttpResponse::InternalServerError().json("Unknown Error Occured");
+        }
+    };
+    HttpResponse::Ok().json(swaps)
+}
+
+
+#[get("/btc-prices")]
+pub async fn btc_prices(db : Data<TagDB>) -> impl Responder {
+    let closing_prices = match db.get_btc_closing_prices().await{
+        Ok(res)=> res,
+        Err(err) => {
+            println!("Error fetching ChainFlipSwaps : {:?}",err);
+            return HttpResponse::InternalServerError().json("Unknown Error Occured");
+        }
+    };
+    HttpResponse::Ok().json(closing_prices)
+}
+
 
 fn is_testnet(orderpair: &str) -> bool {
     let words = &vec!["testnet", "sepolia"];
@@ -201,5 +238,8 @@ pub fn init(config: &mut ServiceConfig) {
     config
     .service(fetch_order)
     .service(add_tag)
-    .service(search);
+    .service(search)
+    .service(thorchain_data)
+    .service(chainflip_data)
+    .service(btc_prices);
 }

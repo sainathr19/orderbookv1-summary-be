@@ -22,7 +22,7 @@ pub struct OrdersCache{
 lazy_static! {
     static ref ORDERS_CACHE: Mutex<OrdersCache> = Mutex::new(OrdersCache {
         orders: Vec::new(),
-        last_fetched: Utc::now() - chrono::Duration::minutes(46),
+        last_fetched: Utc::now() - chrono::Duration::minutes(361),
     });
 }
 

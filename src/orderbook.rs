@@ -26,7 +26,7 @@ impl OrderBook{
     }
 
     pub async fn fetch_orders(&self) -> Result<Vec<MatchedOrder>, OrderBookError> {
-        let response = self.client.get("https://api.garden.finance/orders?verbose=true")
+        let response = self.client.get("https://v1.garden.finance/orders?verbose=true")
             .send()
             .await
             .map_err(|_| OrderBookError::FetchError)?;
